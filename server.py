@@ -146,3 +146,27 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # Класс-заглушка для Render, чтобы он видел рабочий веб-порт
+class WebStub(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"Server is running!")
+
+def run_web_server():
+    # Render автоматически передает порт в переменную окружения PORT
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), WebStub)
+    server.serve_forever()
+
+if __name__ == "__main__":
+    # Запускаем веб-сервер в отдельном потоке, чтобы он не мешал основному коду
+    threading.Thread(target=run_web_server, daemon=True).start()
+
+    # Здесь начинается твоя основная логика (например, отправка сообщений или цикл)
+    log("Ожидание команд в Telegram...")
+
+    # Бесконечный цикл, чтобы скрипт не завершал работу
+    while True:
+        time.sleep(10)
