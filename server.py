@@ -4,6 +4,7 @@ Telegram Bot Server — работает на VDS
 Ретранслирует твои команды клиенту через Telegram
 """
 
+import os
 import sys
 import time
 import requests
@@ -11,12 +12,11 @@ import logging
 from datetime import datetime
 
 # ===== ТВОИ ДАННЫЕ =====
-BOT_TOKEN = "8525986609:AAFOizr7eJUNBaOC-ZHcd18HaY2_roV5DCc"
-CHAT_ID = "8722858929"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Читаем секретный токен из панели Render
+CHAT_ID = "87228582929"
 # =======================
 
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
