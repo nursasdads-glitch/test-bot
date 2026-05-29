@@ -125,7 +125,7 @@ def main():
                             handle_command(chat_id, text)
                         else:
                             log(f"Сообщение от постороннего {chat_id}: {text}")
-                            send_message(chat_id, "❌ Нет доступа")
+                            send_message(chat_id, "❌ Доступа нету иди в попу")
                     
                     # Ловим фото от клиента
                     if 'photo' in update.get('message', {}):
